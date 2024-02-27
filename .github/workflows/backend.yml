@@ -52,4 +52,4 @@ jobs:
             echo "${{ secrets.PAT_TOKEN }}" | sudo docker login ghcr.io -u ${{ github.repository_owner }} --password-stdin
 
             sudo docker pull ghcr.io/${{ github.repository_owner }}/monolythicbc-backend:latest
-            sudo docker run -d -p 8080:80 --name monolythicbc-backend ghcr.io/${{ github.repository_owner }}/monolythicbc-backend:latest
+            sudo docker run -d -p 8000:8000 --name monolythicbc-backend ghcr.io/${{ github.repository_owner }}/monolythicbc-backend:latest
