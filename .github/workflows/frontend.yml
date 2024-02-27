@@ -7,8 +7,6 @@ on:
     paths:
       - "frontend/**"
       - ".github/workflows/frontend.yml"
-  pull_request:
-    types: [opened, synchronize, reopened]
 
 jobs:
   frontend-CI-CD:
@@ -59,7 +57,9 @@ jobs:
           script: |
             sudo docker stop monolythicbc-frontend || true
 
-            sudo docker rm monolythicbc-frontend || true
+            sudo docker rm monolythicbc-frontend || true 
+
+            echo "${{ secrets.PAT_TOKEN }}" | docker login ghcr.io -u ${{ github.repository_owner }} --password-stdin
 
             sudo docker pull ghcr.io/${{ github.repository_owner }}/monolythicbc-frontend:latest
             sudo docker run -d -p 8080:8080 --name monolythicbc-frontend ghcr.io/${{ github.repository_owner }}/monolythicbc-frontend:latest
