@@ -9,7 +9,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@CrossOrigin("http://localhost:8080")
+@CrossOrigin("http://18.218.21.207:8080")
 @RequestMapping("v1/saved-jobs")
 public class UserController {
 
