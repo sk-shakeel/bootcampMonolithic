@@ -1,0 +1,2 @@
+[ec2_instances]
+bootcamp_monolythic ansible_host=18.218.21.207 ansible_user=ubuntu ansible_ssh_private_key_file=/home/shaks/Downloads/shakky-keypair.pem

@@ -1,0 +1,12 @@
+- name: Install Docker on EC2 instance
+  hosts: ec2_instances
+  become: true
+
+  tasks:
+    - name: Download Docker installation script
+      get_url:
+        url: https://get.docker.com
+        dest: /tmp/get-docker.sh
+
+    - name: Execute Docker installation script
+      command: sh /tmp/get-docker.sh

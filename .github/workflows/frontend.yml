@@ -1,0 +1,65 @@
+name: Frontend CICD
+
+on:
+  push:
+    branches:
+      - deployment
+    paths:
+      - "frontend/**"
+      - ".github/workflows/frontend.yml"
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+jobs:
+  frontend-CI-CD:
+    name: Frontend CI/CD
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 14
+
+      - name: Cache node_modules
+        uses: actions/cache@v2
+        with:
+          path: frontend/node_modules
+          key: ${{ runner.os }}-node-${{ hashFiles('**/package.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}-
+
+      - name: Install dependencies
+        if: steps.cache.outputs.cache-hit != 'true'
+        run: npm install
+
+      - name: Login to GHCR
+        run: |
+          echo "${{ secrets.PAT_TOKEN }}" | docker login ghcr.io -u ${{ github.repository_owner }} --password-stdin
+
+      - name: Build the frontend image and push it to GHCR
+        uses: docker/build-push-action@v2
+        with:
+          push: true
+          tags: ghcr.io/${{ github.repository_owner }}/monolythicbc-frontend:latest
+          context: frontend
+
+      - name: Deploy to AWS instance
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.AWS_INSTANCE_IP }}
+          username: ${{ secrets.AWS_INSTANCE_USERNAME }}
+          key: ${{ secrets.AWS_INSTANCE_PRIVATE_KEY }}
+          script: |
+            sudo docker stop monolythicbc-frontend || true
+
+            sudo docker rm monolythicbc-frontend || true
+
+            sudo docker pull ghcr.io/${{ github.repository_owner }}/monolythicbc-frontend:latest
+            sudo docker run -d -p 8080:8080 --name monolythicbc-frontend ghcr.io/${{ github.repository_owner }}/monolythicbc-frontend:latest
