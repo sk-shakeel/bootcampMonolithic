@@ -8,7 +8,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@CrossOrigin("http://18.218.21.207:8080")
+@CrossOrigin("*")
 @RequestMapping("/v1/aqi")
 public class CityController {
 
