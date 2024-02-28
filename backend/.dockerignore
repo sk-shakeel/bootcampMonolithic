@@ -1,0 +1,13 @@
+target/
+.idea/
+
+# Exclude log files
+logs/
+
+# Exclude generated files
+*.log
+*.jar
+
+# Exclude Docker-related files
+.dockerignore
+Dockerfile

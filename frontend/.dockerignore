@@ -1,0 +1,23 @@
+# .dockerignore
+
+# Exclude node_modules since dependencies can be installed separately
+
+node_modules/
+
+# Exclude build artifacts and development files
+
+build/
+dist/
+_.log
+_.env
+.DS_Store
+
+# Exclude version control files
+
+.git/
+.gitignore
+
+# Exclude Docker-related files
+
+.dockerignore
+Dockerfile
