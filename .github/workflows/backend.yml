@@ -54,5 +54,5 @@ jobs:
             
             docker rm monolythicbc-backend || true &&
             
-            docker run -d --name monolythicbc-backend -p 80:80 ghcr.io/${{ github.repository_owner}}/monolythicbc-backend:${{ github.sha }}
+            docker run -d --name monolythicbc-backend -p 8000:8000 ghcr.io/${{ github.repository_owner}}/monolythicbc-backend:${{ github.sha }}
           '
