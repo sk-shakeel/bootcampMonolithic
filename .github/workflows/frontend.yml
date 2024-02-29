@@ -64,7 +64,7 @@ jobs:
 
       - name: Deploy to AWS instance
         run: |
-          ssh -o StrictHostKeyChecking=no -i key.pem ${{ secrets.AWS_INSTANCE_USERNAME }}@${{ ssecrets.AWS_INSTANCE_IP }} '
+          ssh -o StrictHostKeyChecking=no -i key.pem ${{ secrets.AWS_INSTANCE_USERNAME }}@${{ secrets.AWS_INSTANCE_IP }} '
 
             echo "${{ secrets.PAT_TOKEN }}" | docker login ghcr.io -u ${{ github.repository_owner }} --password-stdin
             
