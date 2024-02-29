@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 export default axios.create({
-  baseURL: 'http://3.18.110.253/',
+  baseURL: 'http://3.141.105.181/',
 });
 
 export const getAqi = async (city: any) => {
@@ -11,5 +11,5 @@ export const getAqi = async (city: any) => {
 };
 
 export const getSkills = async (name: any) => {
-  return axios.get(`http://3.18.110.253:8000/v1/skills/${name}`);
+  return axios.get(`http://3.141.105.181:8000/v1/skills/${name}`);
 };

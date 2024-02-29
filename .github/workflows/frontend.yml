@@ -1,5 +1,5 @@
 name: Frontend CICD
-
+run-name: Frontend deployment update triggered by ${{ github.actor }}.
 on:
   push:
     branches:
@@ -25,41 +25,54 @@ jobs:
         with:
           node-version: 14
 
-      - name: Cache node_modules
-        uses: actions/cache@v2
+      - name: Cache Node Modules
+        id: cache-npm
+        uses: actions/cache@v3
+        env:
+          cache-name: cache-node-modules
         with:
-          path: frontend/node_modules
-          key: ${{ runner.os }}-node-${{ hashFiles('**/package.json') }}
-          restore-keys: |
-            ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}-
+          path: ~/.npm
+          key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('**/package.json') }}
 
       - name: Install dependencies
-        if: steps.cache.outputs.cache-hit != 'true'
         run: npm install
 
-      - name: Login to GHCR
-        run: |
-          echo "${{ secrets.PAT_TOKEN }}" | docker login ghcr.io -u ${{ github.repository_owner }} --password-stdin
+      - name: Retrieve the env vars
+        run: echo "${{ secrets.FE_ENV }}" > .env
+
+      - name: Build application
+        run: npm run build
+
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.repository_owner }}
+          password: ${{ secrets.PAT_TOKEN }}
 
       - name: Build the frontend image and push it to GHCR
         uses: docker/build-push-action@v2
         with:
           push: true
-          tags: ghcr.io/${{ github.repository_owner }}/monolythicbc-frontend:latest
+          tags: ghcr.io/${{ github.repository_owner }}/monolythicbc-frontend:${{ github.sha }}
           context: frontend
 
+      - name: Set permissions for private key
+        run: |
+          echo "${{ secrets.AWS_PRIVATE_KEY }}" > key.pem
+          chmod 600 key.pem
+
       - name: Deploy to AWS instance
-        uses: appleboy/ssh-action@master
-        with:
-          host: ${{ secrets.AWS_INSTANCE_IP }}
-          username: ${{ secrets.AWS_INSTANCE_USERNAME }}
-          key: ${{ secrets.AWS_INSTANCE_PRIVATE_KEY }}
-          script: |
-            sudo docker stop monolythicbc-frontend || true
+        run: |
+          ssh -o StrictHostKeyChecking=no -i key.pem ${{ secrets.AWS_INSTANCE_USERNAME }}@${{ ssecrets.AWS_INSTANCE_IP }} '
 
-            sudo docker rm monolythicbc-frontend || true 
+            echo "${{ secrets.PAT_TOKEN }}" | docker login ghcr.io -u ${{ github.repository_owner }} --password-stdin
+            
+            docker pull ghcr.io/${{ github.repository_owner}}/monolythicbc-frontend:${{ github.sha }} &&
 
-            echo "${{ secrets.PAT_TOKEN }}" | sudo docker login ghcr.io -u ${{ github.repository_owner }} --password-stdin
-
-            sudo docker pull ghcr.io/${{ github.repository_owner }}/monolythicbc-frontend:latest
-            sudo docker run -d -p 8080:80 --name monolythicbc-frontend ghcr.io/${{ github.repository_owner }}/monolythicbc-frontend:latest
+            docker stop monolythicbc-frontend || true &&
+            
+            docker rm monolythicbc-frontend || true &&
+            
+            docker run -d --name monolythicbc-frontend -p 80:80 ghcr.io/${{ github.repository_owner}}/monolythicbc-frontend:${{ github.sha }}
+          '

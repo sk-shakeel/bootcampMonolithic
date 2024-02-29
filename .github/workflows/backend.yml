@@ -1,4 +1,6 @@
 name: Backend CICD
+run-name: Backend deployment update triggered by ${{ github.actor }}.
+
 on:
   push:
     branches:
@@ -6,9 +8,6 @@ on:
     paths:
       - "backend/**"
       - ".github/workflows/backend.yml"
-
-permissions:
-  packages: write
 
 jobs:
   backend-deploy:
@@ -35,21 +34,25 @@ jobs:
         uses: docker/build-push-action@v2
         with:
           push: true
-          tags: ghcr.io/${{ github.repository_owner }}/monolythicbc-backend:latest
+          tags: ghcr.io/${{ github.repository_owner }}/monolythicbc-backend:${{ github.sha }}
           context: backend
 
+      - name: Set permissions for private key
+        run: |
+          echo "${{ secrets.AWS_PRIVATE_KEY }}" > key.pem
+          chmod 600 key.pem
+
       - name: Deploy to AWS instance
-        uses: appleboy/ssh-action@master
-        with:
-          host: ${{ secrets.AWS_INSTANCE_IP }}
-          username: ${{ secrets.AWS_INSTANCE_USERNAME }}
-          key: ${{ secrets.AWS_INSTANCE_PRIVATE_KEY }}
-          script: |
-            sudo docker stop monolythicbc-backend || true
+        run: |
+          ssh -o StrictHostKeyChecking=no -i key.pem ${{ secrets.AWS_INSTANCE_USERNAME }}@${{ ssecrets.AWS_INSTANCE_IP }} '
 
-            sudo docker rm monolythicbc-backend || true 
+            echo "${{ secrets.PAT_TOKEN }}" | docker login ghcr.io -u ${{ github.repository_owner }} --password-stdin
+            
+            docker pull ghcr.io/${{ github.repository_owner}}/monolythicbc-backend:${{ github.sha }} &&
 
-            echo "${{ secrets.PAT_TOKEN }}" | sudo docker login ghcr.io -u ${{ github.repository_owner }} --password-stdin
-
-            sudo docker pull ghcr.io/${{ github.repository_owner }}/monolythicbc-backend:latest
-            sudo docker run -d -p 8000:8000 --name monolythicbc-backend ghcr.io/${{ github.repository_owner }}/monolythicbc-backend:latest
+            docker stop monolythicbc-backend || true &&
+            
+            docker rm monolythicbc-backend || true &&
+            
+            docker run -d --name monolythicbc-backend -p 80:80 ghcr.io/${{ github.repository_owner}}/monolythicbc-backend:${{ github.sha }}
+          '
